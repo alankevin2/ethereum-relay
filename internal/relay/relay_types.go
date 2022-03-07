@@ -1,8 +1,9 @@
 package relay
 
 import (
-	"ethereum-relay/config"
 	"math/big"
+
+	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 )

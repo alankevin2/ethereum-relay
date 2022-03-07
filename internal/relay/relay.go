@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"ethereum-relay/config"
 	"fmt"
 	"log"
 	"math/big"
+
+	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"

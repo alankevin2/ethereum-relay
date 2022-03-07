@@ -2,12 +2,13 @@ package api
 
 import (
 	"errors"
-	"ethereum-relay/config"
-	"ethereum-relay/internal/manager"
-	"ethereum-relay/internal/relay"
-	"ethereum-relay/internal/utility"
 	"log"
 	"math/big"
+
+	"gitlab.inlive7.com/crypto/ethereum-relay/config"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/manager"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/utility"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"

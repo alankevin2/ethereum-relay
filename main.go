@@ -1,12 +1,13 @@
 package main
 
 import (
-	"ethereum-relay/config"
-	"ethereum-relay/internal/relay"
-	"ethereum-relay/internal/utility"
-	"ethereum-relay/pkg/api"
 	"fmt"
 	"math/big"
+
+	"gitlab.inlive7.com/crypto/ethereum-relay/config"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/utility"
+	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/api"
 )
 
 func main() {

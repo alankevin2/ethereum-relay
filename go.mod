@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/spf13/viper v1.10.1
-	gitlab.inlive7.com/golang/utils v1.4.2
 )
 
 require (
@@ -48,6 +47,7 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
+	gitlab.inlive7.com/golang/utils v1.4.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
