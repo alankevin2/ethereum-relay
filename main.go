@@ -4,15 +4,20 @@ import (
 	"ethereum-relay/config"
 	"ethereum-relay/internal/relay"
 	"ethereum-relay/internal/utility"
+	"ethereum-relay/pkg/api"
 	"fmt"
 	"math/big"
 )
 
 func main() {
 	config.InitializeConfiguration()
+	testing()
+}
 
+func testing() {
+	reveal, _ := api.VerifySignature("asdasd", "0x063822ca173c4c2ea7c0af6c23d9eb9b1dc398c97cc216a835eb2a2d1d081fdb274159b86aabec4c21c9134ab0e1d44b09b7a456802470a01618919591f034331b")
 	// reveal, _ := api.VerifySignature("123456", "0x395d73df806b470e2211deecb8a8568c8cf164f7fd283cc37038ebb0c814cbeb24e2a9fe1726482bee6c45530851d240a30ce67a971205f895baa1cc17aa30241b")
-	// fmt.Println(reveal)
+	fmt.Println(reveal)
 	// r, p, e := relay.Shared(4).QueryTransaction("0xfe49a399dc9f6ea5a41b7eb415767a22d01054ab70ec93da0010a9d8b3ad6731")
 	// fmt.Println(r)
 	// fmt.Println(p)
