@@ -1,4 +1,4 @@
-module ethereum-relay
+module gitlab.inlive7.com/crypto/ethereum-relay
 
 go 1.17
 
