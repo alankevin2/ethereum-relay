@@ -17,6 +17,10 @@ func WeiToGwei(val *big.Int) *big.Float {
 	return new(big.Float).Quo(new(big.Float).SetInt(val), big.NewFloat(params.GWei))
 }
 
+func Gwei(wei int64) *big.Int {
+	return new(big.Int).Mul(big.NewInt(wei), big.NewInt(params.GWei))
+}
+
 func StringWithoutExponent(val *big.Float) string {
 	f, _ := val.Float64()
 	return strconv.FormatFloat(f, 'f', -1, 32)

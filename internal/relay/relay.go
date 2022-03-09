@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 	"log"
 	"math/big"
 
@@ -93,7 +92,7 @@ func (r Relay) QueryTransaction(txn string) (trans *TransactionState, isPending 
 	}, isPending, err
 }
 
-func (r Relay) SendTransaction(privateKey string, to string, value *big.Int) error {
+func (r Relay) SendTransaction(privateKey string, data *TransactionRaw) error {
 	pk, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		return err
@@ -111,17 +110,26 @@ func (r Relay) SendTransaction(privateKey string, to string, value *big.Int) err
 		return err
 	}
 
-	gasLimit := uint64(21000)           // in units
-	gasPrice := big.NewInt(30000000000) // in wei (30 gwei)
-	toAddress := common.HexToAddress(to)
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-
+	gasLimit := uint64(21000)          // in units
+	gasPrice := data.PreferredGasPrice // usually Gwei
+	toAddress := common.HexToAddress(data.To)
+	cID := big.NewInt(int64(r.currentChainInfo.ID))
+	tx := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   cID,
+		Nonce:     nonce,
+		GasFeeCap: gasPrice,
+		GasTipCap: gasPrice,
+		Gas:       gasLimit,
+		To:        &toAddress,
+		Value:     data.Value,
+		Data:      nil,
+	})
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(big.NewInt(int64(r.currentChainInfo.ID))), pk)
 	if err != nil {
 		return err
 	}
-	fmt.Println(signedTx)
-	return nil
+	result := r.client.SendTransaction(context.Background(), signedTx)
+	return result
 }
 
 func (r Relay) GasPrice() (*EstimateGasInfo, error) {

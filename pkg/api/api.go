@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"log"
-	"math/big"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/manager"
@@ -47,8 +46,8 @@ func QueryTransaction(chainID uint16, txn string) (*relay.TransactionState, bool
 	return r.QueryTransaction(txn)
 }
 
-func SendTransactionUsingPrivateKey(chainID uint16, privateKey string, to string, value *big.Int) error {
-	relay.Shared(config.ChainID(chainID)).SendTransaction(privateKey, to, value)
+func SendTransactionUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) error {
+	relay.Shared(config.ChainID(chainID)).SendTransaction(privateKey, data)
 	return nil
 }
 
