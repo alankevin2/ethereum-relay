@@ -110,7 +110,7 @@ func (r Relay) SendTransaction(privateKey string, data *TransactionRaw) error {
 		return err
 	}
 
-	gasLimit := uint64(21000)          // in units
+	gasLimit := uint64(21000)          // standard transfer limit, see https://ethereum.org/en/developers/docs/gas/, https://eips.ethereum.org/EIPS/eip-1559
 	gasPrice := data.PreferredGasPrice // usually Gwei
 	toAddress := common.HexToAddress(data.To)
 	cID := big.NewInt(int64(r.currentChainInfo.ID))
