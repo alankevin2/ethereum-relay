@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math/big"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/manager"
@@ -14,6 +15,15 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
+
+type EthereumRelay interface {
+	VerifySignature(hash string, signatureHex string) (publicAddress string, err error)
+	CreateNewAccount() (privateKey string, publicKey string, publicAddress string)
+	QueryTransaction(chainID uint16, txn string) (*relay.TransactionState, bool, error)
+	SendTransactionUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) error
+	GetGasPrice(chainID uint16) (*relay.EstimateGasInfo, error)
+	GetBalance(chainID uint16, address string) (balance *big.Int, err error)
+}
 
 // This verification function is for sign_personal
 // func VerifySignature(originMsg string, signatureHex string) (publicAddress string, err error) {
@@ -87,4 +97,10 @@ func SendTransactionUsingPrivateKey(chainID uint16, privateKey string, data *rel
 
 func GetGasPrice(chainID uint16) (*relay.EstimateGasInfo, error) {
 	return relay.Shared(config.ChainID(chainID)).GasPrice()
+}
+
+// balance in wei
+func GetBalance(chainID uint16, address string) (balance *big.Int, err error) {
+	r := relay.Shared(config.ChainID(chainID))
+	return r.GetBalance(address)
 }

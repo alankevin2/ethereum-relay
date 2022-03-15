@@ -141,6 +141,14 @@ func (r Relay) GasPrice() (*EstimateGasInfo, error) {
 	return &EstimateGasInfo{price, tip}, nil
 }
 
+func (r Relay) GetBalance(address string) (balance *big.Int, err error) {
+	balance, err = r.client.BalanceAt(context.Background(), common.HexToAddress(address), nil)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	return
+}
+
 // ******** PRIVATE ******** //
 
 func createInstance(c config.ChainInfo) (*Relay, error) {
