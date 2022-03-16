@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"reflect"
 
 	"github.com/spf13/viper"
 )
@@ -23,20 +24,16 @@ type ProviderInfo struct {
 }
 
 func GetProviderInfo(fileName string) *ProviderInfo {
-
 	currentPath, _ := os.Getwd()
-	// viper.AddConfigPath("gitlab.inlive7.com/crypto/ethereum-relay/config/")
-	// viper.AddConfigPath(currentPath)
 	fullpath := path.Join(currentPath, "config", fileName)
 	_, err := os.Stat(fullpath)
+	// 如果找不到，代表當前執行環境不是以此pkg為主，而是被別人vendor引用
 	if err != nil {
-		fullpath = path.Join(currentPath, "vendor/gitlab.inlive7.com/crypto/ethereum-relay/config/", fileName)
+		pkgPath := reflect.TypeOf(ProviderInfo{}).PkgPath()
+		fullpath = path.Join(currentPath, "vendor", pkgPath, fileName)
 	}
 	viper.SetConfigFile(fullpath)
 	viper.SetConfigType("yml")
-	// viper.SetConfigName(fileName)
-	// viper.SetConfigType("yml")
-	// viper.SetConfigFile(fileName)
 	err = viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(fmt.Errorf("fatal error config file: %w", err))
