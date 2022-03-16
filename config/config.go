@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
+	"path"
 
 	"github.com/spf13/viper"
 )
@@ -10,8 +12,8 @@ import (
 const Debug = true
 
 func InitializeConfiguration() {
-	viper.AddConfigPath("config")
-	viper.SetConfigType("yaml")
+	// viper.AddConfigPath("config")
+	// viper.SetConfigType("yaml")
 }
 
 type ProviderInfo struct {
@@ -21,8 +23,17 @@ type ProviderInfo struct {
 }
 
 func GetProviderInfo(fileName string) *ProviderInfo {
-	viper.SetConfigName(fileName)
-	err := viper.ReadInConfig()
+
+	currentPath, err := os.Getwd()
+	fmt.Println(currentPath)
+	// viper.AddConfigPath("gitlab.inlive7.com/crypto/ethereum-relay/config/")
+	// viper.AddConfigPath(currentPath)
+	viper.SetConfigFile(path.Join(currentPath, "config", fileName))
+	viper.SetConfigType("yml")
+	// viper.SetConfigName(fileName)
+	// viper.SetConfigType("yml")
+	// viper.SetConfigFile(fileName)
+	err = viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(fmt.Errorf("fatal error config file: %w", err))
 	}

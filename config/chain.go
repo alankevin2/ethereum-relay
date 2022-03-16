@@ -26,9 +26,9 @@ func RetrieveChainInfo(id ChainID) (ChainInfo, error) {
 	var info ChainInfo
 	switch id {
 	case mainnet:
-		info = ChainInfo{"mainnet", mainnet, "provider-mainnet"}
+		info = ChainInfo{"mainnet", mainnet, "provider-mainnet.yml"}
 	case rinkeby:
-		info = ChainInfo{"rinkeby", rinkeby, "provider-testnet-rinkeby"}
+		info = ChainInfo{"rinkeby", rinkeby, "provider-testnet-rinkeby.yml"}
 	default:
 		return info, fmt.Errorf("no support yet for chain id : %d", id)
 	}

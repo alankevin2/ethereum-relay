@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 
-	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/api"
 )
 
 func main() {
-	config.InitializeConfiguration()
+	// config.InitializeConfiguration()
 	testing()
 }
 
