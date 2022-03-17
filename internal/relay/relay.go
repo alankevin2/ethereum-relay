@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-var instance *Relay
+var instances = make(map[config.ChainID]*Relay)
 
 /*
 	Use Shared to get same Relay struct to do the logics,
@@ -23,24 +23,23 @@ var instance *Relay
 */
 func Shared(chainID config.ChainID) *Relay {
 
-	if instance != nil && instance.currentChainInfo.ID == chainID {
-		return instance
+	if instances[chainID] != nil {
+		return instances[chainID]
 	}
 
 	info, err := config.RetrieveChainInfo(chainID)
 	if err != nil {
-		log.Println(err.Error())
-		return instance
+		log.Fatal(err.Error())
+		return nil
 	}
-	if instance != nil {
-		instance.destory()
-		instance = nil
-	}
-	instance, err = createInstance(info)
+
+	instance, err := createInstance(info)
 	if err != nil {
 		log.Fatal(err.Error())
+		return nil
 	}
-	return instance
+	instances[chainID] = instance
+	return instances[chainID]
 }
 
 /*
@@ -48,8 +47,9 @@ func Shared(chainID config.ChainID) *Relay {
 	then destory instance to make it load the newer version of yml file.
 */
 func Destory() {
-	instance.destory()
-	instance = nil
+	for _, v := range instances {
+		v.destory()
+	}
 }
 
 func (r Relay) QueryTransaction(txn string) (trans *TransactionState, isPending bool, err error) {

@@ -104,3 +104,10 @@ func GetBalance(chainID uint16, address string) (balance *big.Int, err error) {
 	r := relay.Shared(config.ChainID(chainID))
 	return r.GetBalance(address)
 }
+
+func InitRelay(chainIds []config.ChainID) {
+	for i := range chainIds {
+		// first time call Shared inits the instance
+		relay.Shared(chainIds[i])
+	}
+}
