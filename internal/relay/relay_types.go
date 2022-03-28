@@ -10,6 +10,7 @@ import (
 
 type Relay struct {
 	currentChainInfo config.ChainInfo
+	supportTokens    map[string]string
 	client           *ethclient.Client
 }
 

@@ -6,9 +6,12 @@ import (
 	"errors"
 	"log"
 	"math/big"
+	"strings"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
+	token "gitlab.inlive7.com/crypto/ethereum-relay/contracts/dist"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -135,7 +138,8 @@ func (r Relay) SendTransaction(privateKey string, data *TransactionRaw) error {
 func (r Relay) GasPrice() (*EstimateGasInfo, error) {
 	price, pErr := r.client.SuggestGasPrice(context.Background())
 	tip, tErr := r.client.SuggestGasTipCap(context.Background())
-	if pErr != nil || tErr != nil {
+	// BSC網路取得不到 GasTip
+	if pErr != nil || (tErr != nil && r.currentChainInfo.ID != config.BscMainnet && r.currentChainInfo.ID != config.BscTestnet) {
 		return nil, errors.New("GasPrice failed")
 	}
 	return &EstimateGasInfo{price, tip}, nil
@@ -149,6 +153,29 @@ func (r Relay) GetBalance(address string) (balance *big.Int, err error) {
 	return
 }
 
+func (r Relay) GetBalanceForToken(address string, symbol string) (*big.Int, uint8, error) {
+	tokenAddress := r.supportTokens[strings.ToLower(symbol)]
+	if tokenAddress == "" {
+		return nil, 0, errors.New("can not find matched token")
+	}
+	tAddr := common.HexToAddress(tokenAddress)
+	instance, err := token.NewToken(tAddr, r.client)
+	if err != nil {
+		log.Fatal(err)
+	}
+	balance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(address))
+	if err != nil {
+		log.Fatal(err)
+
+	}
+	decimal, err := instance.Decimals(&bind.CallOpts{})
+	if err != nil {
+		log.Fatal(err)
+
+	}
+	return balance, decimal, nil
+}
+
 // ******** PRIVATE ******** //
 
 func createInstance(c config.ChainInfo) (*Relay, error) {
@@ -160,6 +187,7 @@ func createInstance(c config.ChainInfo) (*Relay, error) {
 
 	return &Relay{
 		c,
+		p.Tokens,
 		client,
 	}, nil
 }

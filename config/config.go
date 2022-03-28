@@ -12,15 +12,11 @@ import (
 
 const Debug = true
 
-func InitializeConfiguration() {
-	// viper.AddConfigPath("config")
-	// viper.SetConfigType("yaml")
-}
-
 type ProviderInfo struct {
 	URL         string
 	IsUsingGeth bool
 	IsUsingWS   bool
+	Tokens      map[string]string
 }
 
 func GetProviderInfo(fileName string) *ProviderInfo {
@@ -42,5 +38,6 @@ func GetProviderInfo(fileName string) *ProviderInfo {
 		viper.GetString("root.url"),
 		viper.GetBool("root.is-using-geth"),
 		viper.GetBool("root.is-using-ws"),
+		viper.GetStringMapString("root.tokens"),
 	}
 }

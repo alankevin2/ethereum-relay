@@ -1,0 +1,5 @@
+root:
+  url: "wss://speedy-nodes-nyc.moralis.io/adc49287d458477aab8d434c/bsc/testnet/ws"
+  is-using-ws: true
+  is-using-geth: false
+  tokens:
