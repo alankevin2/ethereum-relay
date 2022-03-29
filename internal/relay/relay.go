@@ -95,44 +95,48 @@ func (r Relay) QueryTransaction(txn string) (trans *TransactionState, isPending 
 	}, isPending, err
 }
 
-func (r Relay) SendTransaction(privateKey string, data *TransactionRaw) error {
+func (r Relay) TransferValue(privateKey string, data *TransactionRaw) (string, error) {
 	pk, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
-		return err
-	}
-	publicKey := pk.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		return errors.New("error casting public key to ECDSA")
+		return "", err
 	}
 
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-
-	nonce, err := r.client.PendingNonceAt(context.Background(), fromAddress)
+	nonce, err := r.getNonceFromPrivateKey(pk)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	gasLimit := uint64(21000)          // standard transfer limit, see https://ethereum.org/en/developers/docs/gas/, https://eips.ethereum.org/EIPS/eip-1559
-	gasPrice := data.PreferredGasPrice // usually Gwei
+	gasLimit := uint64(21000) // standard transfer limit, see https://ethereum.org/en/developers/docs/gas/, https://eips.ethereum.org/EIPS/eip-1559
 	toAddress := common.HexToAddress(data.To)
 	cID := big.NewInt(int64(r.currentChainInfo.ID))
-	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   cID,
-		Nonce:     nonce,
-		GasFeeCap: gasPrice,
-		GasTipCap: gasPrice,
-		Gas:       gasLimit,
-		To:        &toAddress,
-		Value:     data.Value,
-		Data:      nil,
-	})
+
+	var tx *types.Transaction
+	// BSC uses legacy transaction type
+	if r.currentChainInfo.ID == config.BscMainnet || r.currentChainInfo.ID == config.BscTestnet {
+		tx = types.NewTransaction(nonce, toAddress, data.Value, gasLimit, data.PreferredBaseGasPrice, nil)
+	} else {
+		tx = types.NewTx(&types.DynamicFeeTx{
+			ChainID:   cID,
+			Nonce:     nonce,
+			GasFeeCap: data.PreferredBaseGasPrice,
+			GasTipCap: data.PreferredTipGasPrice,
+			Gas:       gasLimit,
+			To:        &toAddress,
+			Value:     data.Value,
+			Data:      nil,
+		})
+	}
+
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(big.NewInt(int64(r.currentChainInfo.ID))), pk)
 	if err != nil {
-		return err
+		return "", err
 	}
 	result := r.client.SendTransaction(context.Background(), signedTx)
-	return result
+	return signedTx.Hash().String(), result
+}
+
+func (r Relay) TransferToken() {
+
 }
 
 func (r Relay) GasPrice() (*EstimateGasInfo, error) {
@@ -194,4 +198,20 @@ func createInstance(c config.ChainInfo) (*Relay, error) {
 
 func (r Relay) destory() {
 	r.client.Close()
+}
+
+func (r Relay) getNonceFromPrivateKey(pk *ecdsa.PrivateKey) (uint64, error) {
+	publicKey := pk.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return 0, errors.New("error casting public key to ECDSA")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := r.client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return 0, err
+	}
+	return nonce, nil
 }

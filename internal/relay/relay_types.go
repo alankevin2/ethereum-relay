@@ -33,7 +33,8 @@ type EstimateGasInfo struct {
 }
 
 type TransactionRaw struct {
-	Value             *big.Int
-	To                string
-	PreferredGasPrice *big.Int // including tip price
+	Value                 *big.Int
+	To                    string
+	PreferredBaseGasPrice *big.Int
+	PreferredTipGasPrice  *big.Int
 }

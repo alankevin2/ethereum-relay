@@ -12,9 +12,12 @@ type EthereumRelay interface {
 	VerifySignature(hash string, signatureHex string) (publicAddress string, err error)
 	CreateNewAccount() (privateKey string, publicKey string, publicAddress string)
 	QueryTransaction(chainID uint16, txn string) (*relay.TransactionState, bool, error)
-	SendTransactionUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) error
+	TransferValueUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error)
+	TransferTokenUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error)
 	GetGasPrice(chainID uint16) (*relay.EstimateGasInfo, error)
 	GetBalance(chainID uint16, address string) (balance *big.Int, err error)
+	GetBalanceForToken(chainID uint16, address string, symbol string) (balance *big.Int, decimal uint8, err error)
+	InitRelay(chainIds []config.ChainID)
 }
 
 func VerifySignature(hash string, signatureHex string) (publicAddress string, err error) {
@@ -30,9 +33,12 @@ func QueryTransaction(chainID uint16, txn string) (trans *relay.TransactionState
 	return r.QueryTransaction(txn)
 }
 
-func SendTransactionUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) error {
-	relay.Shared(config.ChainID(chainID)).SendTransaction(privateKey, data)
-	return nil
+func TransferValueUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error) {
+	return relay.Shared(config.ChainID(chainID)).TransferValue(privateKey, data)
+}
+
+func TransferTokenUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error) {
+	return relay.Shared(config.ChainID(chainID)).TransferToken(privateKey, data)
 }
 
 func GetGasPrice(chainID uint16) (info *relay.EstimateGasInfo, err error) {

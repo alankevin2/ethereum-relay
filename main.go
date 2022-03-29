@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/utility"
 )
 
 func main() {
@@ -40,15 +41,18 @@ func testing() {
 	// fmt.Println(utility.StringWithoutExponent(utility.WeiToGwei(info.Base)))
 	// fmt.Println(utility.StringWithoutExponent(utility.WeiToGwei(info.Tip)))
 
-	// result := relay.Shared(4).SendTransaction(
-	// 	"16e89bd5528ca6ee27f321e00ec76e6c00ecc6f61a90ac86be3791da4cb7702d",
-	// 	&relay.TransactionRaw{
-	// 		To:                "0xef92aF139cDAdE4A3cB89bb72839c78a1f7406A7",
-	// 		Value:             utility.Gwei(2),
-	// 		PreferredGasPrice: utility.Gwei(2),
-	// 	})
+	suggestGas, _ := relay.Shared(4).GasPrice()
 
-	// fmt.Println(result)
+	hash, err := relay.Shared(4).TransferValue(
+		"2b6c64b688e50a652dd4cf66e478f2fcae8539f0096e18de0d5ea90c0dec2047",
+		&relay.TransactionRaw{
+			To:                    "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC",
+			Value:                 utility.Gwei(33),
+			PreferredBaseGasPrice: suggestGas.Base,
+			PreferredTipGasPrice:  suggestGas.Tip,
+		})
+
+	fmt.Println(hash)
 
 	// fmt.Println(api.GetBalance(4, "0xf92af139cdade4a3cb89bb72839c78a1f7406a7"))
 }
