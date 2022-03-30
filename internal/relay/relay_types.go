@@ -37,4 +37,5 @@ type TransactionRaw struct {
 	To                    string
 	PreferredBaseGasPrice *big.Int
 	PreferredTipGasPrice  *big.Int
+	TokenSymbol           string
 }

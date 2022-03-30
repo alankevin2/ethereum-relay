@@ -10,7 +10,9 @@ import (
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	token "gitlab.inlive7.com/crypto/ethereum-relay/contracts/dist"
+	"golang.org/x/crypto/sha3"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -101,7 +103,12 @@ func (r Relay) TransferValue(privateKey string, data *TransactionRaw) (string, e
 		return "", err
 	}
 
-	nonce, err := r.getNonceFromPrivateKey(pk)
+	fromAddress, err := r.getAddressFromPrivateKey(pk)
+	if err != nil {
+		return "", err
+	}
+
+	nonce, err := r.getNonceFromAddress(*fromAddress)
 	if err != nil {
 		return "", err
 	}
@@ -135,8 +142,87 @@ func (r Relay) TransferValue(privateKey string, data *TransactionRaw) (string, e
 	return signedTx.Hash().String(), result
 }
 
-func (r Relay) TransferToken() {
+func (r Relay) TransferToken(privateKey string, data *TransactionRaw) (string, error) {
+	pk, err := crypto.HexToECDSA(privateKey)
+	if err != nil {
+		return "", err
+	}
 
+	fromAddress, err := r.getAddressFromPrivateKey(pk)
+	if err != nil {
+		return "", err
+	}
+
+	nonce, err := r.getNonceFromAddress(*fromAddress)
+	if err != nil {
+		return "", err
+	}
+
+	transferFnSignature := []byte("transfer(address,uint256)") // do not include spaces in the string
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(transferFnSignature)
+	methodID := hash.Sum(nil)[:4] // 0xa9059cbb
+
+	toAddress := common.HexToAddress(data.To)
+	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
+
+	amount := data.Value
+	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
+
+	var inputData []byte
+	inputData = append(inputData, methodID...)
+	inputData = append(inputData, paddedAddress...)
+	inputData = append(inputData, paddedAmount...)
+
+	token := strings.ToLower(data.TokenSymbol)
+	tokenAddress := r.supportTokens[token]
+	if tokenAddress == "" {
+		return "", errors.New("token not match any of supported tokens")
+	}
+	if !common.IsHexAddress(tokenAddress) {
+		return "", errors.New("token address is not valid")
+	}
+	tAddress := common.HexToAddress(tokenAddress)
+
+	gasLimit, err := r.client.EstimateGas(context.Background(), ethereum.CallMsg{
+		From: *fromAddress,
+		To:   &tAddress,
+		Data: inputData,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	cID := big.NewInt(int64(r.currentChainInfo.ID))
+
+	var tx *types.Transaction
+	// BSC uses legacy transaction type
+	if r.currentChainInfo.ID == config.BscMainnet || r.currentChainInfo.ID == config.BscTestnet {
+		tx = types.NewTransaction(nonce, tAddress, big.NewInt(0), gasLimit, data.PreferredBaseGasPrice, inputData)
+	} else {
+		tx = types.NewTx(&types.DynamicFeeTx{
+			ChainID:   cID,
+			Nonce:     nonce,
+			GasFeeCap: data.PreferredBaseGasPrice,
+			GasTipCap: data.PreferredTipGasPrice,
+			Gas:       gasLimit,
+			To:        &tAddress,
+			Value:     big.NewInt(0),
+			Data:      inputData,
+		})
+	}
+
+	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(cID), pk)
+	if err != nil {
+		return "", err
+	}
+
+	err = r.client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return "", err
+	}
+
+	return signedTx.Hash().Hex(), nil
 }
 
 func (r Relay) GasPrice() (*EstimateGasInfo, error) {
@@ -200,16 +286,19 @@ func (r Relay) destory() {
 	r.client.Close()
 }
 
-func (r Relay) getNonceFromPrivateKey(pk *ecdsa.PrivateKey) (uint64, error) {
+func (r Relay) getAddressFromPrivateKey(pk *ecdsa.PrivateKey) (*common.Address, error) {
 	publicKey := pk.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		return 0, errors.New("error casting public key to ECDSA")
+		return nil, errors.New("error casting public key to ECDSA")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	return &fromAddress, nil
+}
 
-	nonce, err := r.client.PendingNonceAt(context.Background(), fromAddress)
+func (r Relay) getNonceFromAddress(address common.Address) (uint64, error) {
+	nonce, err := r.client.PendingNonceAt(context.Background(), address)
 	if err != nil {
 		return 0, err
 	}
