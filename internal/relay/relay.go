@@ -234,10 +234,11 @@ func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (
 }
 
 func (r Relay) GasPrice() (*extTypes.EstimateGasInfo, error) {
+	cID := r.currentChainInfo.ID
 	price, pErr := r.client.SuggestGasPrice(context.Background())
 	tip, tErr := r.client.SuggestGasTipCap(context.Background())
 	// BSC網路取得不到 GasTip
-	if pErr != nil || (tErr != nil && r.currentChainInfo.ID != config.BscMainnet && r.currentChainInfo.ID != config.BscTestnet) {
+	if pErr != nil || (tErr != nil && cID != config.BscMainnet && cID != config.BscTestnet) {
 		return nil, errors.New("GasPrice failed")
 	}
 	return &extTypes.EstimateGasInfo{
@@ -276,6 +277,30 @@ func (r Relay) GetBalanceForToken(address string, symbol string) (*big.Int, uint
 	}
 	return balance, decimal, nil
 }
+
+// func (r Relay) GasLimit(symbol string) (uint64, error) {
+// 	s := strings.ToLower(symbol)
+// 	cID := r.currentChainInfo.ID
+
+// 	nativeToken := false
+// 	nativeToken = (cID == config.BscMainnet || cID == config.BscTestnet && s == "bnb")
+// 	nativeToken = (cID == config.Rinkeby || cID == config.Mainnet && s == "eth")
+
+// 	// standard transfer limit, see https://ethereum.org/en/developers/docs/gas/, https://eips.ethereum.org/EIPS/eip-1559
+// 	// also apply to BSC
+// 	if nativeToken {
+// 		return 21000, nil
+// 	}
+
+// 	fromAddress := common.HexToAddress("0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC")
+// 	toAddress := common.HexToAddress("0xef92aF139cDAdE4A3cB89bb72839c78a1f7406A7")
+
+// 	gasLimit, err := r.client.EstimateGas(context.Background(), ethereum.CallMsg{
+// 		From: *fromAddress,
+// 		To:   &tAddress,
+// 		Data: inputData,
+// 	})
+// }
 
 // ******** PRIVATE ******** //
 

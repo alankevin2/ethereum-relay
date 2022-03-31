@@ -6,15 +6,16 @@ import (
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/manager"
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
+	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
 )
 
 type EthereumRelay interface {
 	VerifySignature(hash string, signatureHex string) (publicAddress string, err error)
 	CreateNewAccount() (privateKey string, publicKey string, publicAddress string)
-	QueryTransaction(chainID uint16, txn string) (*relay.TransactionState, bool, error)
-	TransferValueUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error)
-	TransferTokenUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error)
-	GetGasPrice(chainID uint16) (*relay.EstimateGasInfo, error)
+	QueryTransaction(chainID uint16, txn string) (*types.TransactionState, bool, error)
+	TransferValueUsingPrivateKey(chainID uint16, privateKey string, data *types.TransactionRaw) (hash string, err error)
+	TransferTokenUsingPrivateKey(chainID uint16, privateKey string, data *types.TransactionRaw) (hash string, err error)
+	GetGasPrice(chainID uint16) (*types.EstimateGasInfo, error)
 	GetBalance(chainID uint16, address string) (balance *big.Int, err error)
 	GetBalanceForToken(chainID uint16, address string, symbol string) (balance *big.Int, decimal uint8, err error)
 	InitRelay(chainIds []config.ChainID)
@@ -28,20 +29,20 @@ func CreateNewAccount() (privateKey string, publicKey string, publicAddress stri
 	return manager.CreateNewAccount()
 }
 
-func QueryTransaction(chainID uint16, txn string) (trans *relay.TransactionState, isPending bool, err error) {
+func QueryTransaction(chainID uint16, txn string) (trans *types.TransactionState, isPending bool, err error) {
 	r := relay.Shared(config.ChainID(chainID))
 	return r.QueryTransaction(txn)
 }
 
-func TransferValueUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error) {
+func TransferValueUsingPrivateKey(chainID uint16, privateKey string, data *types.TransactionRaw) (hash string, err error) {
 	return relay.Shared(config.ChainID(chainID)).TransferValue(privateKey, data)
 }
 
-func TransferTokenUsingPrivateKey(chainID uint16, privateKey string, data *relay.TransactionRaw) (hash string, err error) {
+func TransferTokenUsingPrivateKey(chainID uint16, privateKey string, data *types.TransactionRaw) (hash string, err error) {
 	return relay.Shared(config.ChainID(chainID)).TransferToken(privateKey, data)
 }
 
-func GetGasPrice(chainID uint16) (info *relay.EstimateGasInfo, err error) {
+func GetGasPrice(chainID uint16) (info *types.EstimateGasInfo, err error) {
 	return relay.Shared(config.ChainID(chainID)).GasPrice()
 }
 
