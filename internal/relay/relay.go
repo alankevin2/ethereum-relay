@@ -10,6 +10,8 @@ import (
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	token "gitlab.inlive7.com/crypto/ethereum-relay/contracts/dist"
+	extTypes "gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
+
 	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum"
@@ -19,6 +21,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
+
+type Relay struct {
+	currentChainInfo config.ChainInfo
+	supportTokens    map[string]string
+	client           *ethclient.Client
+}
 
 var instances = make(map[config.ChainID]*Relay)
 
@@ -57,7 +65,7 @@ func Destory() {
 	}
 }
 
-func (r Relay) QueryTransaction(txn string) (trans *TransactionState, isPending bool, err error) {
+func (r Relay) QueryTransaction(txn string) (trans *extTypes.TransactionState, isPending bool, err error) {
 	tx, isPending, err := r.client.TransactionByHash(context.Background(), common.HexToHash(txn))
 	if err != nil {
 		return trans, isPending, err
@@ -83,21 +91,21 @@ func (r Relay) QueryTransaction(txn string) (trans *TransactionState, isPending 
 		return trans, isPending, err
 	}
 
-	return &TransactionState{
-		receipt.Status == 1,
-		tx.Value(),
-		msg.From().Hex(),
-		tx.To().Hex(),
-		tx.GasPrice(),
-		tx.Gas(),
-		h.Time,
-		uint16(tx.ChainId().Uint64()),
-		r.currentChainInfo.Name,
-		msg.Nonce(),
+	return &extTypes.TransactionState{
+		Success:   receipt.Status == 1,
+		Value:     tx.Value(),
+		From:      msg.From().Hex(),
+		To:        tx.To().Hex(),
+		GasPrice:  tx.GasPrice(),
+		Gas:       tx.Gas(),
+		Time:      h.Time,
+		Chain:     uint16(tx.ChainId().Uint64()),
+		ChainName: r.currentChainInfo.Name,
+		UserNonce: msg.Nonce(),
 	}, isPending, err
 }
 
-func (r Relay) TransferValue(privateKey string, data *TransactionRaw) (string, error) {
+func (r Relay) TransferValue(privateKey string, data *extTypes.TransactionRaw) (string, error) {
 	pk, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		return "", err
@@ -142,7 +150,7 @@ func (r Relay) TransferValue(privateKey string, data *TransactionRaw) (string, e
 	return signedTx.Hash().String(), result
 }
 
-func (r Relay) TransferToken(privateKey string, data *TransactionRaw) (string, error) {
+func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (string, error) {
 	pk, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		return "", err
@@ -225,14 +233,17 @@ func (r Relay) TransferToken(privateKey string, data *TransactionRaw) (string, e
 	return signedTx.Hash().Hex(), nil
 }
 
-func (r Relay) GasPrice() (*EstimateGasInfo, error) {
+func (r Relay) GasPrice() (*extTypes.EstimateGasInfo, error) {
 	price, pErr := r.client.SuggestGasPrice(context.Background())
 	tip, tErr := r.client.SuggestGasTipCap(context.Background())
 	// BSC網路取得不到 GasTip
 	if pErr != nil || (tErr != nil && r.currentChainInfo.ID != config.BscMainnet && r.currentChainInfo.ID != config.BscTestnet) {
 		return nil, errors.New("GasPrice failed")
 	}
-	return &EstimateGasInfo{price, tip}, nil
+	return &extTypes.EstimateGasInfo{
+		Base: price,
+		Tip:  tip,
+	}, nil
 }
 
 func (r Relay) GetBalance(address string) (balance *big.Int, err error) {

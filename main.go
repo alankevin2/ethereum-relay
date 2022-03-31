@@ -5,6 +5,7 @@ import (
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/utility"
+	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
 )
 
 func main() {
@@ -45,7 +46,7 @@ func testing() {
 
 	hash, err := relay.Shared(4).TransferValue(
 		"2b6c64b688e50a652dd4cf66e478f2fcae8539f0096e18de0d5ea90c0dec2047",
-		&relay.TransactionRaw{
+		&types.TransactionRaw{
 			To:                    "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC",
 			Value:                 utility.Gwei(33),
 			PreferredBaseGasPrice: suggestGas.Base,

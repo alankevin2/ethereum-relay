@@ -1,18 +1,8 @@
-package relay
+package types
 
 import (
 	"math/big"
-
-	"gitlab.inlive7.com/crypto/ethereum-relay/config"
-
-	"github.com/ethereum/go-ethereum/ethclient"
 )
-
-type Relay struct {
-	currentChainInfo config.ChainInfo
-	supportTokens    map[string]string
-	client           *ethclient.Client
-}
 
 type TransactionState struct {
 	Success   bool // success: status = 1, fail: status = 0
