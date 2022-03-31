@@ -128,13 +128,13 @@ func (r Relay) TransferValue(privateKey string, data *extTypes.TransactionRaw) (
 	var tx *types.Transaction
 	// BSC uses legacy transaction type
 	if r.currentChainInfo.ID == config.BscMainnet || r.currentChainInfo.ID == config.BscTestnet {
-		tx = types.NewTransaction(nonce, toAddress, data.Value, gasLimit, data.PreferredBaseGasPrice, nil)
+		tx = types.NewTransaction(nonce, toAddress, data.Value, gasLimit, data.PreferredGasPrice, nil)
 	} else {
 		tx = types.NewTx(&types.DynamicFeeTx{
 			ChainID:   cID,
 			Nonce:     nonce,
-			GasFeeCap: data.PreferredBaseGasPrice,
-			GasTipCap: data.PreferredTipGasPrice,
+			GasFeeCap: data.PreferredGasPrice,
+			GasTipCap: data.PreferredTipCap,
 			Gas:       gasLimit,
 			To:        &toAddress,
 			Value:     data.Value,
@@ -192,13 +192,13 @@ func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (
 	var tx *types.Transaction
 	// BSC uses legacy transaction type
 	if r.currentChainInfo.ID == config.BscMainnet || r.currentChainInfo.ID == config.BscTestnet {
-		tx = types.NewTransaction(nonce, tokenAddress, big.NewInt(0), gasLimit, data.PreferredBaseGasPrice, inputData)
+		tx = types.NewTransaction(nonce, tokenAddress, big.NewInt(0), gasLimit, data.PreferredGasPrice, inputData)
 	} else {
 		tx = types.NewTx(&types.DynamicFeeTx{
 			ChainID:   cID,
 			Nonce:     nonce,
-			GasFeeCap: data.PreferredBaseGasPrice,
-			GasTipCap: data.PreferredTipGasPrice,
+			GasFeeCap: data.PreferredGasPrice,
+			GasTipCap: data.PreferredTipCap,
 			Gas:       gasLimit,
 			To:        &tokenAddress,
 			Value:     big.NewInt(0),
@@ -228,8 +228,8 @@ func (r Relay) GasPrice() (*extTypes.EstimateGasInfo, error) {
 		return nil, errors.New("GasPrice failed")
 	}
 	return &extTypes.EstimateGasInfo{
-		Base: price,
-		Tip:  tip,
+		GasPrice: price,
+		TipCap:   tip,
 	}, nil
 }
 

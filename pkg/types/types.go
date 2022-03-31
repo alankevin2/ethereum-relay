@@ -18,14 +18,14 @@ type TransactionState struct {
 }
 
 type EstimateGasInfo struct {
-	Base *big.Int
-	Tip  *big.Int
+	GasPrice *big.Int
+	TipCap   *big.Int
 }
 
 type TransactionRaw struct {
-	Value                 *big.Int
-	To                    string
-	PreferredBaseGasPrice *big.Int
-	PreferredTipGasPrice  *big.Int
-	TokenSymbol           string
+	Value             *big.Int
+	To                string
+	PreferredGasPrice *big.Int
+	PreferredTipCap   *big.Int
+	TokenSymbol       string
 }
