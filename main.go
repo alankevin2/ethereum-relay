@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 
-	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
-	"gitlab.inlive7.com/crypto/ethereum-relay/internal/utility"
-	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
+	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/api"
 )
 
 func main() {
@@ -28,32 +27,38 @@ func testing() {
 	// a, b, c := api.CreateNewAccount()
 	// fmt.Println(a, b, c)
 
-	balance, err := relay.Shared(97).GetBalance("0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(balance)
-	info, decimal, err := relay.Shared(1).GetBalanceForToken("0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC", "usdt")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(info, decimal)
+	// balance, err := relay.Shared(97).GetBalance("0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(balance)
+	// info, decimal, err := relay.Shared(1).GetBalanceForToken("0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC", "usdt")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(info, decimal)
 
 	// fmt.Println(utility.StringWithoutExponent(utility.WeiToGwei(info.Base)))
 	// fmt.Println(utility.StringWithoutExponent(utility.WeiToGwei(info.Tip)))
 
-	suggestGas, _ := relay.Shared(4).GasPrice()
+	// suggestGas, _ := relay.Shared(4).GasPrice()
 
-	hash, err := relay.Shared(4).TransferValue(
-		"2b6c64b688e50a652dd4cf66e478f2fcae8539f0096e18de0d5ea90c0dec2047",
-		&types.TransactionRaw{
-			To:                    "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC",
-			Value:                 utility.Gwei(33),
-			PreferredBaseGasPrice: suggestGas.Base,
-			PreferredTipGasPrice:  suggestGas.Tip,
-		})
+	// hash, err := relay.Shared(4).TransferValue(
+	// 	"2b6c64b688e50a652dd4cf66e478f2fcae8539f0096e18de0d5ea90c0dec2047",
+	// 	&types.TransactionRaw{
+	// 		To:                    "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC",
+	// 		Value:                 utility.Gwei(33),
+	// 		PreferredBaseGasPrice: suggestGas.Base,
+	// 		PreferredTipGasPrice:  suggestGas.Tip,
+	// 	})
 
-	fmt.Println(hash)
+	// fmt.Println(hash)
 
 	// fmt.Println(api.GetBalance(4, "0xf92af139cdade4a3cb89bb72839c78a1f7406a7"))
+
+	limit, err := api.GetGasLimit(56, "CTZN", "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC", "0xc63013d45d51bec40f84b8d4aa515faf9f5d88cb", big.NewInt(7e14)) //77913 //77931
+	fmt.Println(limit, err)
+
+	info, err := api.GetGasPrice(1)
+	fmt.Println(info, err)
 }

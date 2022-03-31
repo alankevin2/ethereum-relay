@@ -46,6 +46,10 @@ func GetGasPrice(chainID uint16) (info *types.EstimateGasInfo, err error) {
 	return relay.Shared(config.ChainID(chainID)).GasPrice()
 }
 
+func GetGasLimit(chainID uint16, symbol string, from string, to string, value *big.Int) (gasLimit uint64, err error) {
+	return relay.Shared(config.ChainID(chainID)).GasLimit(symbol, from, to, value)
+}
+
 // balance in wei
 func GetBalance(chainID uint16, address string) (balance *big.Int, err error) {
 	r := relay.Shared(config.ChainID(chainID))
