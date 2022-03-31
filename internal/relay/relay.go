@@ -166,35 +166,21 @@ func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (
 		return "", err
 	}
 
-	transferFnSignature := []byte("transfer(address,uint256)") // do not include spaces in the string
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(transferFnSignature)
-	methodID := hash.Sum(nil)[:4] // 0xa9059cbb
-
-	toAddress := common.HexToAddress(data.To)
-	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
-
-	amount := data.Value
-	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
-
-	var inputData []byte
-	inputData = append(inputData, methodID...)
-	inputData = append(inputData, paddedAddress...)
-	inputData = append(inputData, paddedAmount...)
+	inputData := r.getInputDataForTokenTransfer(common.HexToAddress(data.To), data.Value)
 
 	token := strings.ToLower(data.TokenSymbol)
-	tokenAddress := r.supportTokens[token]
-	if tokenAddress == "" {
+	tokenAddressInHex := r.supportTokens[token]
+	if tokenAddressInHex == "" {
 		return "", errors.New("token not match any of supported tokens")
 	}
-	if !common.IsHexAddress(tokenAddress) {
+	if !common.IsHexAddress(tokenAddressInHex) {
 		return "", errors.New("token address is not valid")
 	}
-	tAddress := common.HexToAddress(tokenAddress)
+	tokenAddress := common.HexToAddress(tokenAddressInHex)
 
 	gasLimit, err := r.client.EstimateGas(context.Background(), ethereum.CallMsg{
 		From: *fromAddress,
-		To:   &tAddress,
+		To:   &tokenAddress,
 		Data: inputData,
 	})
 	if err != nil {
@@ -206,7 +192,7 @@ func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (
 	var tx *types.Transaction
 	// BSC uses legacy transaction type
 	if r.currentChainInfo.ID == config.BscMainnet || r.currentChainInfo.ID == config.BscTestnet {
-		tx = types.NewTransaction(nonce, tAddress, big.NewInt(0), gasLimit, data.PreferredBaseGasPrice, inputData)
+		tx = types.NewTransaction(nonce, tokenAddress, big.NewInt(0), gasLimit, data.PreferredBaseGasPrice, inputData)
 	} else {
 		tx = types.NewTx(&types.DynamicFeeTx{
 			ChainID:   cID,
@@ -214,7 +200,7 @@ func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (
 			GasFeeCap: data.PreferredBaseGasPrice,
 			GasTipCap: data.PreferredTipGasPrice,
 			Gas:       gasLimit,
-			To:        &tAddress,
+			To:        &tokenAddress,
 			Value:     big.NewInt(0),
 			Data:      inputData,
 		})
@@ -278,29 +264,38 @@ func (r Relay) GetBalanceForToken(address string, symbol string) (*big.Int, uint
 	return balance, decimal, nil
 }
 
-// func (r Relay) GasLimit(symbol string) (uint64, error) {
-// 	s := strings.ToLower(symbol)
-// 	cID := r.currentChainInfo.ID
+func (r Relay) GasLimit(symbol string, from string, to string, value *big.Int) (uint64, error) {
+	s := strings.ToLower(symbol)
+	cID := r.currentChainInfo.ID
+	nativeToken := ((cID == config.BscMainnet || cID == config.BscTestnet) && s == "bnb") || ((cID == config.Rinkeby || cID == config.Mainnet) && s == "eth")
+	// standard transfer limit, see https://ethereum.org/en/developers/docs/gas/, https://eips.ethereum.org/EIPS/eip-1559
+	// also apply to BSC
+	if nativeToken {
+		return 21000, nil
+	}
 
-// 	nativeToken := false
-// 	nativeToken = (cID == config.BscMainnet || cID == config.BscTestnet && s == "bnb")
-// 	nativeToken = (cID == config.Rinkeby || cID == config.Mainnet && s == "eth")
+	fromAddress := common.HexToAddress(from)
+	inputData := r.getInputDataForTokenTransfer(common.HexToAddress(to), value)
+	token := strings.ToLower(symbol)
+	tokenAddressInHex := r.supportTokens[token]
+	if tokenAddressInHex == "" {
+		return 0, errors.New("token not match any of supported tokens")
+	}
+	if !common.IsHexAddress(tokenAddressInHex) {
+		return 0, errors.New("token address is not valid")
+	}
+	tokenAddress := common.HexToAddress(tokenAddressInHex)
 
-// 	// standard transfer limit, see https://ethereum.org/en/developers/docs/gas/, https://eips.ethereum.org/EIPS/eip-1559
-// 	// also apply to BSC
-// 	if nativeToken {
-// 		return 21000, nil
-// 	}
-
-// 	fromAddress := common.HexToAddress("0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC")
-// 	toAddress := common.HexToAddress("0xef92aF139cDAdE4A3cB89bb72839c78a1f7406A7")
-
-// 	gasLimit, err := r.client.EstimateGas(context.Background(), ethereum.CallMsg{
-// 		From: *fromAddress,
-// 		To:   &tAddress,
-// 		Data: inputData,
-// 	})
-// }
+	gasLimit, err := r.client.EstimateGas(context.Background(), ethereum.CallMsg{
+		From: fromAddress,
+		To:   &tokenAddress,
+		Data: inputData,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return gasLimit, nil
+}
 
 // ******** PRIVATE ******** //
 
@@ -339,4 +334,20 @@ func (r Relay) getNonceFromAddress(address common.Address) (uint64, error) {
 		return 0, err
 	}
 	return nonce, nil
+}
+
+func (r Relay) getInputDataForTokenTransfer(to common.Address, value *big.Int) []byte {
+	transferFnSignature := []byte("transfer(address,uint256)") // do not include spaces in the string
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(transferFnSignature)
+	methodID := hash.Sum(nil)[:4] // 0xa9059cbb
+
+	paddedAddress := common.LeftPadBytes(to.Bytes(), 32)
+	paddedAmount := common.LeftPadBytes(value.Bytes(), 32)
+
+	var inputData []byte
+	inputData = append(inputData, methodID...)
+	inputData = append(inputData, paddedAddress...)
+	inputData = append(inputData, paddedAmount...)
+	return inputData
 }
