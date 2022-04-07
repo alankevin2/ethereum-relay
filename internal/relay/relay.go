@@ -65,7 +65,7 @@ func Destory() {
 	}
 }
 
-func (r Relay) QueryTransaction(txn string) (trans *extTypes.TransactionState, isPending bool, err error) {
+func (r *Relay) QueryTransaction(txn string) (trans *extTypes.TransactionState, isPending bool, err error) {
 	tx, isPending, err := r.client.TransactionByHash(context.Background(), common.HexToHash(txn))
 	if err != nil {
 		return trans, isPending, err
@@ -105,7 +105,7 @@ func (r Relay) QueryTransaction(txn string) (trans *extTypes.TransactionState, i
 	}, isPending, err
 }
 
-func (r Relay) TransferValue(privateKey string, data *extTypes.TransactionRaw) (string, error) {
+func (r *Relay) TransferValue(privateKey string, data *extTypes.TransactionRaw) (string, error) {
 	pk, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		return "", err
@@ -150,7 +150,7 @@ func (r Relay) TransferValue(privateKey string, data *extTypes.TransactionRaw) (
 	return signedTx.Hash().String(), result
 }
 
-func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (string, error) {
+func (r *Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (string, error) {
 	pk, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		return "", err
@@ -219,7 +219,7 @@ func (r Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) (
 	return signedTx.Hash().Hex(), nil
 }
 
-func (r Relay) GasPrice() (*extTypes.EstimateGasInfo, error) {
+func (r *Relay) GasPrice() (*extTypes.EstimateGasInfo, error) {
 	cID := r.currentChainInfo.ID
 	price, pErr := r.client.SuggestGasPrice(context.Background())
 	tip, tErr := r.client.SuggestGasTipCap(context.Background())
@@ -233,7 +233,7 @@ func (r Relay) GasPrice() (*extTypes.EstimateGasInfo, error) {
 	}, nil
 }
 
-func (r Relay) GetBalance(address string) (balance *big.Int, err error) {
+func (r *Relay) GetBalance(address string) (balance *big.Int, err error) {
 	balance, err = r.client.BalanceAt(context.Background(), common.HexToAddress(address), nil)
 	if err != nil {
 		log.Println(err.Error())
@@ -241,7 +241,7 @@ func (r Relay) GetBalance(address string) (balance *big.Int, err error) {
 	return
 }
 
-func (r Relay) GetBalanceForToken(address string, symbol string) (*big.Int, uint8, error) {
+func (r *Relay) GetBalanceForToken(address string, symbol string) (*big.Int, uint8, error) {
 	tokenAddress := r.supportTokens[strings.ToLower(symbol)]
 	if tokenAddress == "" {
 		return nil, 0, errors.New("can not find matched token")
@@ -264,7 +264,7 @@ func (r Relay) GetBalanceForToken(address string, symbol string) (*big.Int, uint
 	return balance, decimal, nil
 }
 
-func (r Relay) GasLimit(symbol string, from string, to string, value *big.Int) (uint64, error) {
+func (r *Relay) GasLimit(symbol string, from string, to string, value *big.Int) (uint64, error) {
 	s := strings.ToLower(symbol)
 	cID := r.currentChainInfo.ID
 	nativeToken := ((cID == config.BscMainnet || cID == config.BscTestnet) && s == "bnb") || ((cID == config.Rinkeby || cID == config.Mainnet) && s == "eth")
@@ -313,11 +313,11 @@ func createInstance(c config.ChainInfo) (*Relay, error) {
 	}, nil
 }
 
-func (r Relay) destory() {
+func (r *Relay) destory() {
 	r.client.Close()
 }
 
-func (r Relay) getAddressFromPrivateKey(pk *ecdsa.PrivateKey) (*common.Address, error) {
+func (r *Relay) getAddressFromPrivateKey(pk *ecdsa.PrivateKey) (*common.Address, error) {
 	publicKey := pk.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
@@ -328,7 +328,7 @@ func (r Relay) getAddressFromPrivateKey(pk *ecdsa.PrivateKey) (*common.Address, 
 	return &fromAddress, nil
 }
 
-func (r Relay) getNonceFromAddress(address common.Address) (uint64, error) {
+func (r *Relay) getNonceFromAddress(address common.Address) (uint64, error) {
 	nonce, err := r.client.PendingNonceAt(context.Background(), address)
 	if err != nil {
 		return 0, err
@@ -336,7 +336,7 @@ func (r Relay) getNonceFromAddress(address common.Address) (uint64, error) {
 	return nonce, nil
 }
 
-func (r Relay) getInputDataForTokenTransfer(to common.Address, value *big.Int) []byte {
+func (r *Relay) getInputDataForTokenTransfer(to common.Address, value *big.Int) []byte {
 	transferFnSignature := []byte("transfer(address,uint256)") // do not include spaces in the string
 	hash := sha3.NewLegacyKeccak256()
 	hash.Write(transferFnSignature)
