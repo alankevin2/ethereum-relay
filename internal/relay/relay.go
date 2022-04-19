@@ -297,6 +297,10 @@ func (r *Relay) GasLimit(symbol string, from string, to string, value *big.Int) 
 	return gasLimit, nil
 }
 
+func (r *Relay) GetTokenAddress(symbol string) string {
+	return r.supportTokens[symbol]
+}
+
 // ******** PRIVATE ******** //
 
 func createInstance(c config.ChainInfo) (*Relay, error) {

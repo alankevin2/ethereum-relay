@@ -18,6 +18,7 @@ type EthereumRelay interface {
 	GetGasPrice(chainID uint16) (*types.EstimateGasInfo, error)
 	GetBalance(chainID uint16, address string) (balance *big.Int, err error)
 	GetBalanceForToken(chainID uint16, address string, symbol string) (balance *big.Int, decimal uint8, err error)
+	GetTokenAddress(chainID uint16, symbol string) (address string)
 	InitRelay(chainIds []config.ChainID)
 }
 
@@ -59,6 +60,10 @@ func GetBalance(chainID uint16, address string) (balance *big.Int, err error) {
 func GetBalanceForToken(chainID uint16, address string, symbol string) (balance *big.Int, decimal uint8, err error) {
 	r := relay.Shared(config.ChainID(chainID))
 	return r.GetBalanceForToken(address, symbol)
+}
+
+func GetTokenAddress(chainID uint16, symbol string) (address string) {
+	return relay.Shared(config.ChainID(chainID)).GetTokenAddress(symbol)
 }
 
 func InitRelay(chainIds []config.ChainID) {
