@@ -2,19 +2,19 @@ package relay
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"log"
 	"math/big"
 	"strings"
+	"time"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/config"
 	token "gitlab.inlive7.com/crypto/ethereum-relay/contracts/dist"
+	"gitlab.inlive7.com/crypto/ethereum-relay/internal/utility"
 	extTypes "gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
 
-	"golang.org/x/crypto/sha3"
-
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,6 +26,16 @@ type Relay struct {
 	currentChainInfo config.ChainInfo
 	supportTokens    map[string]string
 	client           *ethclient.Client
+	subscriptions    map[chan extTypes.EventLogTransfer]*subscription
+	erc20ContractABI *abi.ABI
+}
+
+type subscription struct {
+	Output   chan extTypes.EventLogTransfer
+	Sub      ethereum.Subscription
+	Log      chan types.Log
+	Enable   bool
+	Interval time.Duration
 }
 
 var instances = make(map[config.ChainID]*Relay)
@@ -111,7 +121,7 @@ func (r *Relay) TransferValue(privateKey string, data *extTypes.TransactionRaw) 
 		return "", err
 	}
 
-	fromAddress, err := r.getAddressFromPrivateKey(pk)
+	fromAddress, err := utility.GetAddressFromPrivateKey(pk)
 	if err != nil {
 		return "", err
 	}
@@ -156,7 +166,7 @@ func (r *Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) 
 		return "", err
 	}
 
-	fromAddress, err := r.getAddressFromPrivateKey(pk)
+	fromAddress, err := utility.GetAddressFromPrivateKey(pk)
 	if err != nil {
 		return "", err
 	}
@@ -166,7 +176,7 @@ func (r *Relay) TransferToken(privateKey string, data *extTypes.TransactionRaw) 
 		return "", err
 	}
 
-	inputData := r.getInputDataForTokenTransfer(common.HexToAddress(data.To), data.Value)
+	inputData := utility.GetInputDataForTokenTransfer(common.HexToAddress(data.To), data.Value)
 
 	token := strings.ToLower(data.TokenSymbol)
 	tokenAddressInHex := r.supportTokens[token]
@@ -275,7 +285,7 @@ func (r *Relay) GasLimit(symbol string, from string, to string, value *big.Int) 
 	}
 
 	fromAddress := common.HexToAddress(from)
-	inputData := r.getInputDataForTokenTransfer(common.HexToAddress(to), value)
+	inputData := utility.GetInputDataForTokenTransfer(common.HexToAddress(to), value)
 	token := strings.ToLower(symbol)
 	tokenAddressInHex := r.supportTokens[token]
 	if tokenAddressInHex == "" {
@@ -310,26 +320,22 @@ func createInstance(c config.ChainInfo) (*Relay, error) {
 		return nil, errors.New("ethclient dial failed")
 	}
 
+	ERC20TokenContractABI, err := abi.JSON(strings.NewReader(token.TokenABI))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Relay{
 		c,
 		p.Tokens,
 		client,
+		make(map[chan extTypes.EventLogTransfer]*subscription),
+		&ERC20TokenContractABI,
 	}, nil
 }
 
 func (r *Relay) destory() {
 	r.client.Close()
-}
-
-func (r *Relay) getAddressFromPrivateKey(pk *ecdsa.PrivateKey) (*common.Address, error) {
-	publicKey := pk.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, errors.New("error casting public key to ECDSA")
-	}
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	return &fromAddress, nil
 }
 
 func (r *Relay) getNonceFromAddress(address common.Address) (uint64, error) {
@@ -338,20 +344,4 @@ func (r *Relay) getNonceFromAddress(address common.Address) (uint64, error) {
 		return 0, err
 	}
 	return nonce, nil
-}
-
-func (r *Relay) getInputDataForTokenTransfer(to common.Address, value *big.Int) []byte {
-	transferFnSignature := []byte("transfer(address,uint256)") // do not include spaces in the string
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(transferFnSignature)
-	methodID := hash.Sum(nil)[:4] // 0xa9059cbb
-
-	paddedAddress := common.LeftPadBytes(to.Bytes(), 32)
-	paddedAmount := common.LeftPadBytes(value.Bytes(), 32)
-
-	var inputData []byte
-	inputData = append(inputData, methodID...)
-	inputData = append(inputData, paddedAddress...)
-	inputData = append(inputData, paddedAmount...)
-	return inputData
 }

@@ -29,3 +29,10 @@ type TransactionRaw struct {
 	PreferredTipCap   *big.Int
 	TokenSymbol       string
 }
+
+type EventLogTransfer struct {
+	Txn    string
+	From   string
+	To     string
+	Tokens *big.Int
+}

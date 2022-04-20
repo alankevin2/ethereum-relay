@@ -1,13 +1,17 @@
 package utility
 
 import (
+	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"golang.org/x/crypto/sha3"
 )
 
 func WeiToEther(val *big.Int) *big.Float {
@@ -47,4 +51,31 @@ func EIP712Hash(typedData apitypes.TypedData) (hash []byte, err error) {
 	rawData := []byte(fmt.Sprintf("\x19\x01%s%s", string(domainSeparator), string(typedDataHash)))
 	hash = crypto.Keccak256(rawData)
 	return
+}
+
+func GetAddressFromPrivateKey(pk *ecdsa.PrivateKey) (*common.Address, error) {
+	publicKey := pk.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("error casting public key to ECDSA")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	return &fromAddress, nil
+}
+
+func GetInputDataForTokenTransfer(to common.Address, value *big.Int) []byte {
+	transferFnSignature := []byte("transfer(address,uint256)") // do not include spaces in the string
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(transferFnSignature)
+	methodID := hash.Sum(nil)[:4] // 0xa9059cbb
+
+	paddedAddress := common.LeftPadBytes(to.Bytes(), 32)
+	paddedAmount := common.LeftPadBytes(value.Bytes(), 32)
+
+	var inputData []byte
+	inputData = append(inputData, methodID...)
+	inputData = append(inputData, paddedAddress...)
+	inputData = append(inputData, paddedAmount...)
+	return inputData
 }

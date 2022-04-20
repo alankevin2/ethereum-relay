@@ -66,6 +66,10 @@ func GetTokenAddress(chainID uint16, symbol string) (address string) {
 	return relay.Shared(config.ChainID(chainID)).GetTokenAddress(symbol)
 }
 
+func SubscribeTokenEvents(chainID uint16, symbol string, address string) (realtimeLogs chan interface{}, err error) {
+	return relay.Shared(config.ChainID(chainID)).SubscribeTokenEvents(symbol, address)
+}
+
 func InitRelay(chainIds []config.ChainID) {
 	for i := range chainIds {
 		// first time call Shared inits the instance

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
+	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
 )
 
 func main() {
@@ -12,6 +13,12 @@ func main() {
 }
 
 func testing() {
+	ch := make(chan types.EventLogTransfer)
+	relay.Shared(4).SubscribeTokenEvents("usdt", "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC", ch)
+	for {
+		fmt.Println("this is main", <-ch)
+	}
+
 	// str := "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Login\":[{\"name\":\"nonce\",\"type\":\"string\"},{\"name\":\"contents\",\"type\":\"string\"}]},\"primaryType\":\"Login\",\"domain\":{\"name\":\"XBBCrypto\",\"version\":\"1.0\",\"chainId\":\"4\",\"verifyingContract\":\"0x0000000000000000000000000000000000000000\"},\"message\":{\"contents\":\"Login to XBBCrypto\",\"nonce\":\"123123123123\"}}"
 	// fmt.Println(str)
 	// reveal, _ := api.VerifySignature(str, "0xc16edd7cea6c29b5c38c74552c92780790b8e5c4370a3e59eca699cbe67f307e12dfe77a90b8ef4a027a9408b10173c288a69ef99abc554f28580d070d6fe2151c")
@@ -63,20 +70,4 @@ func testing() {
 
 	// info, err := api.GetGasPrice(1)
 	// fmt.Println(info, err)
-}
-
-type B struct {
-	value int
-}
-
-type A struct {
-	bbb B
-}
-
-func (a *A) test(value B) {
-	a.bbb = value
-}
-
-func (a *A) check() {
-	a.bbb = B{value: 9999}
 }
