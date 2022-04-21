@@ -19,6 +19,7 @@ type EthereumRelay interface {
 	GetBalance(chainID uint16, address string) (balance *big.Int, err error)
 	GetBalanceForToken(chainID uint16, address string, symbol string) (balance *big.Int, decimal uint8, err error)
 	GetTokenAddress(chainID uint16, symbol string) (address string)
+	SubscribeTokenEvents(chainID uint16, symbol string, address string, logs chan types.EventLogTransfer) error
 	InitRelay(chainIds []config.ChainID)
 }
 
@@ -66,8 +67,8 @@ func GetTokenAddress(chainID uint16, symbol string) (address string) {
 	return relay.Shared(config.ChainID(chainID)).GetTokenAddress(symbol)
 }
 
-func SubscribeTokenEvents(chainID uint16, symbol string, address string) (realtimeLogs chan interface{}, err error) {
-	return relay.Shared(config.ChainID(chainID)).SubscribeTokenEvents(symbol, address)
+func SubscribeTokenEvents(chainID uint16, symbol string, address string, logs chan types.EventLogTransfer) error {
+	return relay.Shared(config.ChainID(chainID)).SubscribeTokenEvents(symbol, address, logs)
 }
 
 func InitRelay(chainIds []config.ChainID) {

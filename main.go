@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitlab.inlive7.com/crypto/ethereum-relay/internal/relay"
+	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/api"
 	"gitlab.inlive7.com/crypto/ethereum-relay/pkg/types"
 )
 
@@ -14,7 +15,7 @@ func main() {
 
 func testing() {
 	ch := make(chan types.EventLogTransfer)
-	relay.Shared(4).SubscribeTokenEvents("usdt", "0xE34224f746F7Da45c870573850d4AbbfC8c3B1AC", ch)
+	api.SubscribeTokenEvents(56, "usdt", "", ch)
 	for {
 		fmt.Println("this is main", <-ch)
 	}
