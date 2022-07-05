@@ -1,5 +1,5 @@
 root:
-  url: "wss://bsc-ws-node.nariox.org:443" # wss://speedy-nodes-nyc.moralis.io/adc49287d458477aab8d434c/bsc/mainnet/ws
+  url: "wss://speedy-nodes-nyc.moralis.io/adc49287d458477aab8d434c/bsc/mainnet/ws"
   is-using-ws: true
   is-using-geth: false
   tokens:
